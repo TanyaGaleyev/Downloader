@@ -9,7 +9,7 @@ import java.net.URL;
  */
 public class SomeTest {
     public static void main(String[] args) throws Exception {
-        URL url = new URL("http://www.yandex.ru/");
+        URL url = new URL("http://yandex.st/weather/1.2.50/i/icons/48x48/skc_d.png");
         DownloadController dc = new DownloadController();
         dc.startDownload(url);
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));

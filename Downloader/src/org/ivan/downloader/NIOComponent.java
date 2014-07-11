@@ -23,8 +23,11 @@ public class NIOComponent implements IOComponent {
             public int read(byte[] buffer) throws IOException {
                 int nRead = socketChannel.read(byteBuffer);
                 byteBuffer.flip();
-                byteBuffer.get(buffer, 0, nRead);
-                byteBuffer.clear();
+                if(nRead > 0 || byteBuffer.limit() > 0) {
+                    nRead = Math.min(byteBuffer.limit(), buffer.length);
+                    byteBuffer.get(buffer, 0, nRead);
+                    byteBuffer.compact();
+                }
                 return nRead;
             }
 
