@@ -1,6 +1,6 @@
 package org.ivan.downloader;
 
-import java.io.FileNotFoundException;
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -10,10 +10,14 @@ import java.nio.channels.FileChannel;
  * Created by ivan on 10.07.2014.
  */
 public class FileHolder implements DownloadHolder {
-    private final String fileName;
+    private final File file;
 
     public FileHolder(String fileName) {
-        this.fileName = fileName;
+        this.file = new File(fileName);
+    }
+
+    public FileHolder(File file) {
+        this.file = file;
     }
 
     private FileChannel output;
@@ -21,7 +25,7 @@ public class FileHolder implements DownloadHolder {
     @Override
     public void init(long offset) throws IOException {
         if(output != null) throw new IllegalStateException("could not init when output already open");
-        output = new RandomAccessFile(fileName, "rw").getChannel();
+        output = new RandomAccessFile(file, "rw").getChannel();
         output.position(offset);
     }
 

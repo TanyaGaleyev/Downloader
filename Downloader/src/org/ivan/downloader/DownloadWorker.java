@@ -1,6 +1,8 @@
 package org.ivan.downloader;
 
 import java.io.IOException;
+import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.ClosedChannelException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,25 +23,42 @@ public class DownloadWorker {
         this.downloadHolder = downloadHolder;
     }
 
+    public DownloadWorker(IOWrapper ioWrapper, ProtocolHelper helper, DownloadHolder downloadHolder, DownloadState state) {
+        this.ioWrapper = ioWrapper;
+        this.helper = helper;
+        this.downloadHolder = downloadHolder;
+        this.state = state;
+    }
+
     public void performDownload() {
         byte[] buffer = new byte[DEFAULT_BUFF_SIZE];
         int nRead;
         try {
-            while ((nRead = helper.readDownloadBytes(buffer, ioWrapper)) != -1 && !Thread.interrupted()) {
+            while ((nRead = helper.readDownloadBytes(buffer, ioWrapper)) != -1) {
                 downloadHolder.appendBytes(buffer, 0, nRead);
                 updateState(nRead);
             }
             updateStateFinish();
+        } catch (ClosedByInterruptException e) {
+            updateStatePaused();
         } catch (IOException e) {
-            updateStateError("Exception occured " + e.getMessage());
+            updateStateError("Exception occured " + e.getClass().getName());
             Logger.getLogger(getClass().getName()).log(Level.WARNING, e.getMessage(), e);
         }
     }
 
     private void updateStateFinish() {
+        updateState(DownloadState.StateCode.COMPLETE);
+    }
+
+    private void updateStatePaused() {
+        updateState(DownloadState.StateCode.PAUSED);
+    }
+
+    private void updateState(DownloadState.StateCode stateCode) {
         state = new DownloadState(
-                DownloadState.StateCode.COMPLETE,
-                DownloadState.StateCode.COMPLETE.toString(),
+                stateCode,
+                stateCode.toString(),
                 state.getBytesRead(),
                 state.getLength()
         );

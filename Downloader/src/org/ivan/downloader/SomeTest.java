@@ -9,17 +9,33 @@ import java.net.URL;
  */
 public class SomeTest {
     public static void main(String[] args) throws Exception {
-        URL url = new URL("http://yandex.st/weather/1.2.50/i/icons/48x48/skc_d.png");
         DownloadController dc = new DownloadController();
-        dc.startDownload(url);
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        String str;
-        while (!(str = br.readLine().trim().toLowerCase()).equals("q")) {
-            if(str.equals("s"))
-                for (DownloadDescriptor d : dc.getDescriptors()) {
-                    System.out.println(dc.getState(d));
-                }
+        try {
+//            URL url = new URL("http://norvig.com/big.txt");
+//            URL url = new URL("http://tutorials.jenkov.com/images/java-nio/buffers-modes.png");
+            URL url = new URL("http://heanet.dl.sourceforge.net/project/keepass/KeePass%202.x/2.25/KeePass-2.25.zip");
+            DownloadDescriptor dd = dc.startDownload(url);
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            String str;
+            Thread.sleep(500);
+            dc.pauseDownload(dd);
+            while (!(str = br.readLine().trim().toLowerCase()).equals("q")) {
+                if(str.equals("s"))
+                    for (DownloadDescriptor d : dc.getDescriptors()) {
+                        dc.requestStateAsync(d, new Callback<DownloadState>() {
+                            @Override
+                            public void process(DownloadState result) {
+                                System.out.println(result.toString());
+                            }
+                        });
+                    }
+                else if(str.equals("r"))
+                    dc.resumeDownload(dd);
+                else if(str.equals("p"))
+                    dc.pauseDownload(dd);
+            }
+        } finally {
+            dc.release();
         }
-        dc.release();
     }
 }

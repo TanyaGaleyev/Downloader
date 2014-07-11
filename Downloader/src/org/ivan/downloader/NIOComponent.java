@@ -13,6 +13,7 @@ public class NIOComponent implements IOComponent {
 
     @Override
     public IOWrapper sendRequest(URL url, byte[] request) throws IOException {
+        System.out.println(new String(request));
         final SocketChannel socketChannel = SocketChannel.open(
                 new InetSocketAddress(url.getHost(), url.getPort() != -1 ? url.getPort() : url.getDefaultPort()));
         socketChannel.write(ByteBuffer.wrap(request));

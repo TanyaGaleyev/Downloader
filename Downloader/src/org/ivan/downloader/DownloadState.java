@@ -56,6 +56,6 @@ public class DownloadState {
 
     @Override
     public String toString() {
-        return String.format("%s(%s) downloaded: %d, length: %d\n", stateCode.toString(), message, bytesRead, length);
+        return String.format("%s(%s) downloaded: %d, length: %d", stateCode.toString(), message, bytesRead, length);
     }
 }
