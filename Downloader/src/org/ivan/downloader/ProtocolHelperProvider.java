@@ -10,6 +10,6 @@ public class ProtocolHelperProvider {
         if(url.getProtocol().trim().equalsIgnoreCase("http"))
             return new HttpHelper(url);
         else
-            throw new IllegalArgumentException("Unknown protocol" + url.getProtocol());
+            throw new IllegalArgumentException("Unknown protocol " + url.getProtocol());
     }
 }

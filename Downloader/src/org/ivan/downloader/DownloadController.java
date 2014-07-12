@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DownloadController implements DownloadObserver {
     public static final String DOWNLOADS_DIR = "downloads";
     private WorkersController workersController;
-    private List<DownloadDescriptor> descriptors = new ArrayList<>();
+    private Map<Integer, DownloadDescriptor> descriptors = new ConcurrentHashMap<>();
     private IOComponent ioComponent = new NIOComponent();
     private int counter = 0;
     private Map<Integer, DownloadTuple> downloadTupleMap = new ConcurrentHashMap<>();
@@ -28,7 +28,7 @@ public class DownloadController implements DownloadObserver {
 
     public DownloadDescriptor startDownload(URL url) throws IOException {
         DownloadDescriptor d = new DownloadDescriptor(url, counter++);
-        descriptors.add(d);
+        descriptors.put(d.getUid(), d);
         DownloadTuple dl = new DownloadTuple();
         dl.stateCode = DownloadState.StateCode.NOT_STARTED;
         dl.bytesRead = 0;
@@ -54,7 +54,9 @@ public class DownloadController implements DownloadObserver {
     }
 
     private DownloadHolder constructHolder(DownloadDescriptor d) {
-        File file = new File(DOWNLOADS_DIR + File.separator + "dld" + d.getUid());
+        String[] pathParts = d.getUrl().getPath().split("/");
+        String filename = pathParts[pathParts.length - 1];
+        File file = new File(DOWNLOADS_DIR + File.separator + filename);
         file.delete();
         return new FileHolder(file);
     }
@@ -86,7 +88,8 @@ public class DownloadController implements DownloadObserver {
             if (dl.stateCode == DownloadState.StateCode.IN_PROGRESS) {
                 workersController.sendMessage(new CancelWorkerMessage(d.getUid(), true));
             }
-            if (dl.stateCode != DownloadState.StateCode.COMPLETE) {
+            if (dl.stateCode != DownloadState.StateCode.COMPLETE &&
+                    dl.stateCode != DownloadState.StateCode.NOT_STARTED) {
                 dl.stateCode = DownloadState.StateCode.NOT_STARTED;
                 dl.holder.clear();
                 dl.holder = null;
@@ -95,7 +98,7 @@ public class DownloadController implements DownloadObserver {
         }
     }
 
-    public List<DownloadDescriptor> getDescriptors() {
+    public Map<Integer, DownloadDescriptor> getDescriptors() {
         return descriptors;
     }
 

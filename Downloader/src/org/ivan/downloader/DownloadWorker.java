@@ -32,6 +32,7 @@ public class DownloadWorker {
     public void performDownload() throws IOException {
         ioAdapter.open();
         byte[] requestMessage = helper.getRequestMessage(bytesRead);
+        System.out.println(new String(requestMessage));
         ioAdapter.write(requestMessage);
         isRangeSupported = helper.isRangeSupported(ioAdapter);
         if(size == 0) size = helper.getSize();

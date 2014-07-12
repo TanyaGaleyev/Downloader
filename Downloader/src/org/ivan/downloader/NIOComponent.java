@@ -21,6 +21,7 @@ public class NIOComponent implements IOComponent {
             public void open() throws IOException {
                 socketChannel = SocketChannel.open(
                         new InetSocketAddress(url.getHost(), url.getPort() != -1 ? url.getPort() : url.getDefaultPort()));
+                socketChannel.socket().setSoTimeout(1000);
             }
 
             @Override
