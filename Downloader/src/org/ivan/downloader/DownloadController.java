@@ -101,6 +101,7 @@ public class DownloadController implements DownloadObserver {
             if (dl.stateCode != DownloadState.StateCode.COMPLETE &&
                     dl.stateCode != DownloadState.StateCode.NOT_STARTED) {
                 dl.stateCode = DownloadState.StateCode.NOT_STARTED;
+                // todo very probable that deletion should be in callback method
                 dl.holder.clear();
                 dl.holder = null;
                 dl.bytesRead = 0;
