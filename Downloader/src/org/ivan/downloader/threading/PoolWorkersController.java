@@ -1,6 +1,7 @@
-package org.ivan.downloader;
+package org.ivan.downloader.threading;
 
-import org.ivan.downloader.messages.*;
+import org.ivan.downloader.DownloadObserver;
+import org.ivan.downloader.threading.messages.*;
 
 import java.io.IOException;
 import java.nio.channels.ClosedByInterruptException;

@@ -1,8 +1,18 @@
 package org.ivan.downloader;
 
-import org.ivan.downloader.messages.CancelWorkerMessage;
-import org.ivan.downloader.messages.GetStateMessage;
-import org.ivan.downloader.messages.SubmitWorkerMessage;
+import org.ivan.downloader.interaction.IOComponent;
+import org.ivan.downloader.interaction.NIOComponent;
+import org.ivan.downloader.protocols.ProtocolHelper;
+import org.ivan.downloader.protocols.ProtocolHelperProvider;
+import org.ivan.downloader.storage.DownloadHolder;
+import org.ivan.downloader.storage.FileHolder;
+import org.ivan.downloader.threading.DownloadWorker;
+import org.ivan.downloader.threading.messages.CancelWorkerMessage;
+import org.ivan.downloader.threading.messages.GetStateMessage;
+import org.ivan.downloader.threading.messages.SubmitWorkerMessage;
+import org.ivan.downloader.threading.Callback;
+import org.ivan.downloader.threading.PoolWorkersController;
+import org.ivan.downloader.threading.WorkersController;
 
 import java.io.File;
 import java.io.IOException;
@@ -106,20 +116,13 @@ public class DownloadController implements DownloadObserver {
         DownloadTuple dl = downloadTupleMap.get(d.getUid());
         synchronized (dl) {
             if (dl.stateCode != DownloadState.StateCode.IN_PROGRESS) {
-                DownloadState state = new DownloadState();
-                state.setBytesRead(dl.bytesRead);
-                state.setStateCode(dl.stateCode);
-                state.setLength(dl.size);
-                callback.process(state);
+                callback.process(new DownloadState(dl.stateCode, dl.bytesRead, dl.size));
             } else {
                 workersController.sendMessage(new GetStateMessage(d.getUid()), new Callback<DownloadWorker>() {
                     @Override
                     public void process(DownloadWorker result) {
-                        DownloadState state = new DownloadState();
-                        state.setBytesRead(result.getBytesRead());
-                        state.setStateCode(DownloadState.StateCode.IN_PROGRESS);
-                        state.setLength(result.getSize());
-                        callback.process(state);
+                        callback.process(new DownloadState(
+                                DownloadState.StateCode.IN_PROGRESS, result.getBytesRead(), result.getSize()));
                     }
                 });
             }

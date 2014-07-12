@@ -1,8 +1,11 @@
-package org.ivan.downloader;
+package org.ivan.downloader.protocols;
 
 import java.net.URL;
 
 /**
+ * Creates helpers for different protocols.
+ * @see ProtocolHelper
+ * <p>
  * Created by ivan on 10.07.2014.
  */
 public class ProtocolHelperProvider {

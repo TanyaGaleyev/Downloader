@@ -1,4 +1,4 @@
-package org.ivan.downloader.messages;
+package org.ivan.downloader.threading.messages;
 
 /**
  * User: Ivan Pavlukhin

@@ -1,4 +1,8 @@
-package org.ivan.downloader;
+package org.ivan.downloader.threading;
+
+import org.ivan.downloader.interaction.IOAdapter;
+import org.ivan.downloader.protocols.ProtocolHelper;
+import org.ivan.downloader.storage.DownloadHolder;
 
 import java.io.IOException;
 import java.util.logging.Level;

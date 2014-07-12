@@ -1,6 +1,6 @@
-package org.ivan.downloader;
+package org.ivan.downloader.threading;
 
-import org.ivan.downloader.messages.Message;
+import org.ivan.downloader.threading.messages.Message;
 
 /**
  * Created by ivan on 10.07.2014.

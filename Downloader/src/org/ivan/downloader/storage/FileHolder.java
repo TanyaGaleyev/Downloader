@@ -1,4 +1,4 @@
-package org.ivan.downloader;
+package org.ivan.downloader.storage;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,6 +7,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 /**
+ * Holder that store download bytes to filesystem
+ * <p>
  * Created by ivan on 10.07.2014.
  */
 public class FileHolder implements DownloadHolder {
@@ -30,8 +32,8 @@ public class FileHolder implements DownloadHolder {
     }
 
     @Override
-    public void appendBytes(byte[] buffer, int offset, int length) throws IOException {
-        output.write(ByteBuffer.wrap(buffer, offset, length));
+    public int appendBytes(byte[] buffer, int offset, int length) throws IOException {
+        return output.write(ByteBuffer.wrap(buffer, offset, length));
     }
 
     @Override

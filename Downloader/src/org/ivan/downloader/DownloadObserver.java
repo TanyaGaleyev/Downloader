@@ -1,5 +1,7 @@
 package org.ivan.downloader;
 
+import org.ivan.downloader.threading.DownloadWorker;
+
 /**
  * User: Ivan Pavlukhin
  * Date: 11.07.2014

@@ -18,6 +18,12 @@ public class DownloadState {
         this.length = length;
     }
 
+    public DownloadState(StateCode stateCode, int bytesRead, int length) {
+        this.stateCode = stateCode;
+        this.bytesRead = bytesRead;
+        this.length = length;
+    }
+
     public StateCode getStateCode() {
         return stateCode;
     }

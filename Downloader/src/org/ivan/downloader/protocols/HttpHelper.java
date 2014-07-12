@@ -1,4 +1,6 @@
-package org.ivan.downloader;
+package org.ivan.downloader.protocols;
+
+import org.ivan.downloader.interaction.IOAdapter;
 
 import java.io.IOException;
 import java.net.URL;
@@ -6,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Helps with http protocol interaction
+ * <p>
  * Created by ivan on 10.07.2014.
  */
 public class HttpHelper implements ProtocolHelper {
