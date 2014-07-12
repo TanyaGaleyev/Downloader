@@ -13,7 +13,8 @@ public class SomeTest {
         try {
 //            URL url = new URL("http://norvig.com/big.txt");
 //            URL url = new URL("http://tutorials.jenkov.com/images/java-nio/buffers-modes.png");
-            URL url = new URL("http://heanet.dl.sourceforge.net/project/keepass/KeePass%202.x/2.25/KeePass-2.25.zip");
+//            URL url = new URL("http://heanet.dl.sourceforge.net/project/keepass/KeePass%202.x/2.25/KeePass-2.25.zip");
+            URL url = new URL("http://download-cf.jetbrains.com/idea/ideaIU-13.1.3.exe");
             DownloadDescriptor dd = dc.startDownload(url);
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             String str;
@@ -22,10 +23,10 @@ public class SomeTest {
             while (!(str = br.readLine().trim().toLowerCase()).equals("q")) {
                 if(str.equals("s"))
                     for (DownloadDescriptor d : dc.getDescriptors()) {
-                        dc.requestStateAsync(d, new Callback<DownloadState>() {
+                        dc.requestState(d, new Callback<DownloadState>() {
                             @Override
                             public void process(DownloadState result) {
-                                System.out.println(result.toString());
+                                System.out.println(result);
                             }
                         });
                     }
@@ -33,6 +34,8 @@ public class SomeTest {
                     dc.resumeDownload(dd);
                 else if(str.equals("p"))
                     dc.pauseDownload(dd);
+                else if(str.equals("c"))
+                    dc.stopDownload(dd);
             }
         } finally {
             dc.release();

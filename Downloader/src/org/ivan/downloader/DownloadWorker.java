@@ -1,8 +1,6 @@
 package org.ivan.downloader;
 
 import java.io.IOException;
-import java.nio.channels.ClosedByInterruptException;
-import java.nio.channels.ClosedChannelException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -12,86 +10,53 @@ import java.util.logging.Logger;
 public class DownloadWorker {
 
     public static final int DEFAULT_BUFF_SIZE = 2048;
-    private final IOWrapper ioWrapper;
+    private final IOAdapter ioAdapter;
     private final ProtocolHelper helper;
     private final DownloadHolder downloadHolder;
-    private volatile DownloadState state = new DownloadState();
+    private volatile int bytesRead;
+    private volatile boolean isRangeSupported;
+    private volatile int size;
 
-    public DownloadWorker(IOWrapper ioWrapper, ProtocolHelper helper, DownloadHolder downloadHolder) {
-        this.ioWrapper = ioWrapper;
-        this.helper = helper;
-        this.downloadHolder = downloadHolder;
+    public DownloadWorker(IOAdapter ioAdapter, ProtocolHelper helper, DownloadHolder downloadHolder) {
+        this(ioAdapter, helper, downloadHolder, 0, 0);
     }
 
-    public DownloadWorker(IOWrapper ioWrapper, ProtocolHelper helper, DownloadHolder downloadHolder, DownloadState state) {
-        this.ioWrapper = ioWrapper;
+    public DownloadWorker(IOAdapter ioAdapter, ProtocolHelper helper, DownloadHolder downloadHolder, int bytesRead, int size) {
+        this.ioAdapter = ioAdapter;
         this.helper = helper;
         this.downloadHolder = downloadHolder;
-        this.state = state;
+        this.bytesRead = bytesRead;
+        this.size = size;
     }
 
-    public void performDownload() {
+    public void performDownload() throws IOException {
+        ioAdapter.open();
+        byte[] requestMessage = helper.getRequestMessage(bytesRead);
+        ioAdapter.write(requestMessage);
+        isRangeSupported = helper.isRangeSupported(ioAdapter);
+        if(size == 0) size = helper.getSize();
         byte[] buffer = new byte[DEFAULT_BUFF_SIZE];
         int nRead;
-        try {
-            while ((nRead = helper.readDownloadBytes(buffer, ioWrapper)) != -1) {
-                downloadHolder.appendBytes(buffer, 0, nRead);
-                updateState(nRead);
-            }
-            updateStateFinish();
-        } catch (ClosedByInterruptException e) {
-            updateStatePaused();
-        } catch (IOException e) {
-            updateStateError("Exception occured " + e.getClass().getName());
-            Logger.getLogger(getClass().getName()).log(Level.WARNING, e.getMessage(), e);
+        while ((nRead = helper.readDownloadBytes(buffer, ioAdapter)) != -1) {
+            downloadHolder.appendBytes(buffer, 0, nRead);
+            bytesRead += nRead;
         }
-    }
-
-    private void updateStateFinish() {
-        updateState(DownloadState.StateCode.COMPLETE);
-    }
-
-    private void updateStatePaused() {
-        updateState(DownloadState.StateCode.PAUSED);
-    }
-
-    private void updateState(DownloadState.StateCode stateCode) {
-        state = new DownloadState(
-                stateCode,
-                stateCode.toString(),
-                state.getBytesRead(),
-                state.getLength()
-        );
-    }
-
-    private void updateStateError(String errorMessage) {
-        state = new DownloadState(
-                DownloadState.StateCode.PAUSED_ERROR,
-                errorMessage,
-                state.getBytesRead(),
-                state.getLength()
-        );
-    }
-
-    private void updateState(int nRead) {
-        state = new DownloadState(
-                DownloadState.StateCode.IN_PROGRESS,
-                DownloadState.StateCode.IN_PROGRESS.toString(),
-                state.getBytesRead() + nRead,
-                state.getLength()
-        );
     }
 
     public void cancel() {
         try {
-            ioWrapper.close();
+            ioAdapter.close();
             downloadHolder.flush();
         } catch (IOException e) {
             Logger.getLogger(getClass().getName()).log(Level.WARNING, e.getMessage(), e);
         }
     }
 
-    public DownloadState getState() {
-        return state;
+    public int getBytesRead() {
+        return bytesRead;
+    }
+
+    public int getSize() {
+        return size;
     }
 }

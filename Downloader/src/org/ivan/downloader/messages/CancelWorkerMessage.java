@@ -7,12 +7,18 @@ package org.ivan.downloader.messages;
  */
 public class CancelWorkerMessage implements Message {
     private int uid;
+    private boolean stop;
 
-    public CancelWorkerMessage(int uid) {
+    public CancelWorkerMessage(int uid, boolean stop) {
         this.uid = uid;
+        this.stop = stop;
     }
 
     public int getUid() {
         return uid;
+    }
+
+    public boolean isStop() {
+        return stop;
     }
 }

@@ -2,6 +2,8 @@ package org.ivan.downloader;
 
 import org.ivan.downloader.messages.*;
 
+import java.io.IOException;
+import java.nio.channels.ClosedByInterruptException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -39,7 +41,7 @@ public class PoolWorkersController implements WorkersController {
                         controller.processMessage();
                     }
                 } catch (InterruptedException e) {
-                    Logger.getLogger(PoolWorkersController.class.getName()).log(Level.WARNING, e.getMessage(), e);
+                    Logger.getLogger(PoolWorkersController.class.getName()).log(Level.INFO, "Message pool interrupted", e);
                 }
             }
         });
@@ -59,7 +61,7 @@ public class PoolWorkersController implements WorkersController {
                 result = cancelWorker(cm.getUid());
             } else if (m instanceof GetStateMessage) {
                 GetStateMessage gsm = ((GetStateMessage) m);
-                result = getWorker(gsm.getUid()).getState();
+                result = getWorker(gsm.getUid());
             }
             mu.cb.process(result);
         } catch (RuntimeException e) {
@@ -73,16 +75,23 @@ public class PoolWorkersController implements WorkersController {
             public void run() {
                 try {
                     worker.performDownload();
+                    downloadObserver.onWorkerComplete(uid, worker);
+                } catch (ClosedByInterruptException e) {
+                    downloadObserver.onWorkerStopped(uid, worker);
+                    Logger.getLogger(PoolWorkersController.class.getName()).log(Level.INFO, "worker canceled", e);
+                } catch (IOException e) {
+                    downloadObserver.onWorkerError(uid, worker);
+                    Logger.getLogger(PoolWorkersController.class.getName()).log(Level.INFO, e.getClass().getName(), e);
                 } catch (Exception e) {
-                    Logger.getLogger(PoolWorkersController.class.getName()).log(Level.SEVERE, e.getMessage(), e);
+                    downloadObserver.onWorkerError(uid, worker);
+                    Logger.getLogger(PoolWorkersController.class.getName()).log(Level.SEVERE, e.getClass().getName(), e);
                 } finally {
+                    // need to avoid message loop put interruption exception
                     Thread.interrupted();
-                    sendMessage(new EmptyMessage(), new Callback<Object>() {
+                    sendMessage(new CancelWorkerMessage(uid, true), new Callback<Object>() {
                         @Override
                         public void process(Object result) {
                             workerMap.remove(uid);
-                            worker.cancel();
-                            downloadObserver.onWorkerStopped(uid, worker);
                         }
                     });
                 }

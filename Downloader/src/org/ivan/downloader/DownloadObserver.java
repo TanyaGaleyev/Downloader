@@ -7,4 +7,6 @@ package org.ivan.downloader;
  */
 public interface DownloadObserver {
     void onWorkerStopped(int id, DownloadWorker worker);
+    void onWorkerComplete(int id, DownloadWorker worker);
+    void onWorkerError(int id, DownloadWorker worker);
 }

@@ -40,4 +40,9 @@ public class FileHolder implements DownloadHolder {
         output.close();
         output = null;
     }
+
+    @Override
+    public void clear() {
+        file.delete();
+    }
 }

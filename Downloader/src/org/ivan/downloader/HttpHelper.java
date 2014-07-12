@@ -9,22 +9,28 @@ import java.util.List;
  * Created by ivan on 10.07.2014.
  */
 public class HttpHelper implements ProtocolHelper {
+    private final URL url;
+
+    public HttpHelper(URL url) {
+        this.url = url;
+    }
+
     @Override
-    public byte[] getRequestMessage(URL url, int offset, int length) {
+    public byte[] getRequestMessage(int offset, int length) {
         return (baseGetHeader(url) +
                 String.format("Range: bytes=%d-%d\r\n\r\n", offset, offset + length - 1))
                 .getBytes();
     }
 
     @Override
-    public byte[] getRequestMessage(URL url, int offset) {
+    public byte[] getRequestMessage(int offset) {
         return (baseGetHeader(url) +
                 String.format("Range: bytes=%d-\r\n\r\n", offset))
                 .getBytes();
     }
 
     @Override
-    public byte[] getRequestMessage(URL url) {
+    public byte[] getRequestMessage() {
         return (baseGetHeader(url) + "\r\n"
 //                + "Range: bytes=0-\r\n\r\n"
         ).getBytes();
@@ -34,30 +40,37 @@ public class HttpHelper implements ProtocolHelper {
     private boolean headerRead = false;
     private int contentLength = 0;
     private boolean chunked = false;
+    private boolean supportsRange = false;
     @Override
-    public int readDownloadBytes(byte[] buffer, IOWrapper ioWrapper) throws IOException {
+    public int readDownloadBytes(byte[] buffer, IOAdapter ioAdapter) throws IOException {
+        readHeader(ioAdapter);
+        if(chunked) {
+            return readChunked(buffer, ioAdapter);
+        } else {
+            return readLength(buffer, ioAdapter);
+        }
+    }
+
+    private void readHeader(IOAdapter ioAdapter) throws IOException {
         if(!headerRead) {
             headerRead = true;
-            for (String header : readHeaders(ioWrapper)) {
+            for (String header : readHeaders(ioAdapter)) {
                 if (header.startsWith("Content-Length:")) {
                     contentLength = Integer.parseInt(header.substring("Content-Length:".length()).trim());
                 } else if(header.startsWith("Transfer-Encoding:") && header.contains("chunked")) {
                     chunked = true;
+                } else if(header.startsWith("Accept-Ranges:") && header.contains("bytes")) {
+                    supportsRange = true;
                 }
             }
         }
-        if(chunked) {
-            return readChunked(buffer, ioWrapper);
-        } else {
-            return readLength(buffer, ioWrapper);
-        }
     }
 
-    private int readChunked(byte[] buffer, IOWrapper ioWrapper) {
+    private int readChunked(byte[] buffer, IOAdapter ioAdapter) {
         throw new IllegalStateException("Chunks not supported now");
     }
 
-    private int readLength(byte[] buffer, IOWrapper ioWrapper) throws IOException {
+    private int readLength(byte[] buffer, IOAdapter ioAdapter) throws IOException {
         if(totalRead >= contentLength) return -1;
         int nRead;
         // TODO really should be while
@@ -74,24 +87,27 @@ public class HttpHelper implements ProtocolHelper {
 //            }
 //            readPosition = internalBuffer.length;
 //        } else {
-            nRead = ioWrapper.read(buffer);
+            nRead = ioAdapter.read(buffer);
 //        }
         totalRead += nRead;
         return nRead;
     }
 
     @Override
-    public byte[] checkRangeDownloadMessage(URL url) {
+    public byte[] checkRangeDownloadMessage() {
         return headHeader(url).getBytes();
     }
 
     @Override
-    public boolean isRangeSupported(IOWrapper ioWrapper) throws IOException {
-        for(String header : readHeaders(ioWrapper))
-            if(header.startsWith("Accept-Ranges:") && header.contains("bytes"))
-                return true;
+    public boolean isRangeSupported(IOAdapter ioAdapter) throws IOException {
+        readHeader(ioAdapter);
         readPosition = internalBuffer.length;
-        return false;
+        return supportsRange;
+    }
+
+    @Override
+    public int getSize() {
+        return contentLength;
     }
 
 
@@ -99,14 +115,15 @@ public class HttpHelper implements ProtocolHelper {
     int readPosition = internalBuffer.length;
     int internalLenght = 0;
 
-    private List<String> readHeaders(IOWrapper ioWrapper) throws IOException {
+    private List<String> readHeaders(IOAdapter ioAdapter) throws IOException {
+        // todo it seems there is nothing about wrong format headers situation
         List<String> ret = new ArrayList<>();
         byte[] aux = new byte[1];
         int nRead;
         StringBuilder sb = new StringBuilder();
-        while (ioWrapper.read(aux) != -1) {
+        while (ioAdapter.read(aux) != -1) {
             if(aux[0] == '\r') {
-                ioWrapper.read(aux);
+                ioAdapter.read(aux);
                 if(sb.length() == 0) break;
                 ret.add(sb.toString());
                 sb = new StringBuilder();
