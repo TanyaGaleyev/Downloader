@@ -25,6 +25,7 @@ public class SomeTest {
 //        DownloadController dc = new DownloadController(
 //                new GenericComponentsFactory(new NIOComponent(), new SimpleProtocolHelperProvider()),
 //                new PoolWorkersController());
+        printUsage();
         try {
 //            URL url = new URL("http://norvig.com/big.txt");
 //            URL url = new URL("http://tutorials.jenkov.com/images/java-nio/buffers-modes.png");
@@ -35,8 +36,6 @@ public class SomeTest {
 //            DownloadDescriptor dd = dc.startDownload(url);
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             String str;
-//            Thread.sleep(500);
-//            dc.pauseDownload(dd);
             while (!(str = br.readLine().trim().toLowerCase()).equals("q")) {
                 if (str.equals("l")) {
                     Collection<DownloadDescriptor> descriptors = dc.getDescriptors().values();
@@ -87,5 +86,27 @@ public class SomeTest {
             System.out.println("Request download by uid");
             return Collections.emptyList();
         }
+    }
+
+    private static void printUsage() {
+        System.out.println("Test console for Download Manager");
+        System.out.println("Usage:");
+        System.out.println("l");
+        System.out.println("    prints list of submitted downloads");
+        System.out.println("OR");
+        System.out.println("d <url>");
+        System.out.println("    start download from specified url");
+        System.out.println("OR");
+        System.out.println("<command> <id>");
+        System.out.println("    where <command>::=r|p|c");
+        System.out.println("    r -- means resume");
+        System.out.println("    p -- means pause");
+        System.out.println("    c -- means cancel");
+        System.out.println("    and <id> could be unique single download identifier or *");
+        System.out.println("    * means that action will be taken to every download");
+        System.out.println("Hint: to determine download id call 'l' command");
+        System.out.println("OR");
+        System.out.println("q");
+        System.out.println("    leave console");
     }
 }

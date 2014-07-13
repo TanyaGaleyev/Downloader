@@ -76,6 +76,7 @@ public class DownloadController implements DownloadManager, DownloadObserver {
         String[] pathParts = d.getUrl().getPath().split("/");
         String filename = pathParts[pathParts.length - 1];
         filename = filename.split("\\?")[0];
+        if(filename.trim().isEmpty()) filename = "" + d.getUid();
         File file = new File(DOWNLOADS_DIR + File.separator + filename);
         file.delete();
         return new FileHolder(file);

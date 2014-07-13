@@ -13,4 +13,8 @@ public class DownloadResponse {
         this.holder = holder;
         this.stateCode = stateCode;
     }
+
+    public boolean isReady() {
+        return stateCode == DownloadState.StateCode.COMPLETE;
+    }
 }
