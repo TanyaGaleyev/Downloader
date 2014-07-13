@@ -1,4 +1,4 @@
-package org.ivan.downloader.interaction;
+package org.ivan.downloader.connection;
 
 import java.io.Closeable;
 import java.io.IOException;

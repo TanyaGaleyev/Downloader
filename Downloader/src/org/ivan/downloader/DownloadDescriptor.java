@@ -10,6 +10,7 @@ public class DownloadDescriptor {
     private URL url;
     private int uid;
     private Date startDate;
+    private Date endDate;
 
     public DownloadDescriptor(URL url, int uid) {
         this.url = url;
@@ -27,5 +28,14 @@ public class DownloadDescriptor {
 
     public Date getStartDate() {
         return startDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public long getDownloadTime() {
+        Date date = endDate != null ? endDate : new Date();
+        return date.getTime() - startDate.getTime();
     }
 }

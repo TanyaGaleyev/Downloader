@@ -1,6 +1,6 @@
 package org.ivan.downloader.threading.messages;
 
-import org.ivan.downloader.threading.DownloadWorker;
+import org.ivan.downloader.worker.DownloadWorker;
 
 /**
  * User: Ivan Pavlukhin

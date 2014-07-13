@@ -1,6 +1,6 @@
-package org.ivan.downloader.threading;
+package org.ivan.downloader.worker;
 
-import org.ivan.downloader.interaction.IOAdapter;
+import org.ivan.downloader.connection.IOAdapter;
 import org.ivan.downloader.protocols.ProtocolHelper;
 import org.ivan.downloader.storage.DownloadHolder;
 
@@ -9,6 +9,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Class that performs download process.
+ * <p>
+ * Inside this class we use download abstraction at three aspects:
+ * <ol>
+ *     <li>download peer IO implementation;</li>
+ *     <li>download protocol;</li>
+ *     <li>storage to which download are saved.</li>
+ * </ol>
+ * Each aspect is independent and we could create different combination of IO implementations and chosen protocols
+ * <p>
  * Created by ivan on 10.07.2014.
  */
 public class DownloadWorker {
@@ -35,11 +45,9 @@ public class DownloadWorker {
 
     public void performDownload() throws IOException {
         ioAdapter.open();
-        byte[] requestMessage = helper.getRequestMessage(bytesRead);
-        System.out.println(new String(requestMessage));
-        ioAdapter.write(requestMessage);
+        helper.requestDownload(ioAdapter, bytesRead);
         isRangeSupported = helper.isRangeSupported(ioAdapter);
-        if(size == 0) size = helper.getSize();
+        if(size <= 0) size = helper.getSize();
         byte[] buffer = new byte[DEFAULT_BUFF_SIZE];
         int nRead;
         while ((nRead = helper.readDownloadBytes(buffer, ioAdapter)) != -1) {
@@ -53,7 +61,7 @@ public class DownloadWorker {
             ioAdapter.close();
             downloadHolder.flush();
         } catch (IOException e) {
-            Logger.getLogger(getClass().getName()).log(Level.WARNING, e.getMessage(), e);
+            Logger.getGlobal().log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -63,5 +71,9 @@ public class DownloadWorker {
 
     public int getSize() {
         return size;
+    }
+
+    public boolean isRangeSupported() {
+        return isRangeSupported;
     }
 }

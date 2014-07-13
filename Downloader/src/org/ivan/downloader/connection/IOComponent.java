@@ -1,4 +1,4 @@
-package org.ivan.downloader.interaction;
+package org.ivan.downloader.connection;
 
 import java.io.IOException;
 import java.net.URL;

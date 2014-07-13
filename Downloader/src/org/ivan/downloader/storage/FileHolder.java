@@ -2,8 +2,10 @@ package org.ivan.downloader.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 
 /**
@@ -22,25 +24,33 @@ public class FileHolder implements DownloadHolder {
         this.file = file;
     }
 
-    private FileChannel output;
+    private FileChannel channel;
 
     @Override
     public void init(long offset) throws IOException {
-        if(output != null) throw new IllegalStateException("could not init when output already open");
-        output = new RandomAccessFile(file, "rw").getChannel();
-        output.position(offset);
+        if(channel != null) throw new IllegalStateException("could not init when channel already open");
+        channel = new RandomAccessFile(file, "rw").getChannel();
+        channel.position(offset);
     }
 
     @Override
     public int appendBytes(byte[] buffer, int offset, int length) throws IOException {
-        return output.write(ByteBuffer.wrap(buffer, offset, length));
+        return channel.write(ByteBuffer.wrap(buffer, offset, length));
+    }
+
+    private InputStream inputStream = null;
+    @Override
+    public int readBytes(byte[] buffer) throws IOException {
+        // TODO replace with read direct from channel, wrap with InputStream for simplicity
+        if(inputStream == null) inputStream = Channels.newInputStream(channel);
+        return inputStream.read(buffer);
     }
 
     @Override
     public void flush() throws IOException {
-        if(output == null) return;
-        output.close();
-        output = null;
+        if(channel == null) return;
+        channel.close();
+        channel = null;
     }
 
     @Override

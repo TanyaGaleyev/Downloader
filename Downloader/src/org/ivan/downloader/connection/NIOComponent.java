@@ -1,8 +1,9 @@
-package org.ivan.downloader.interaction;
+package org.ivan.downloader.connection;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
@@ -27,12 +28,16 @@ public class NIOComponent implements IOComponent {
 
             @Override
             public int read(byte[] buffer) throws IOException {
-                int nRead = socketChannel.read(byteBuffer);
-                byteBuffer.flip();
+                int nRead = 0;
+                if(byteBuffer.position() == 0) {
+                    nRead = socketChannel.read(byteBuffer);
+                    byteBuffer.flip();
+                }
                 if(nRead > 0 || byteBuffer.limit() > 0) {
-                    nRead = Math.min(byteBuffer.limit(), buffer.length);
+                    nRead = Math.min(byteBuffer.limit() - byteBuffer.position(), buffer.length);
                     byteBuffer.get(buffer, 0, nRead);
-                    byteBuffer.compact();
+                    if(byteBuffer.position() == byteBuffer.limit())
+                        byteBuffer.clear();
                 }
                 return nRead;
             }

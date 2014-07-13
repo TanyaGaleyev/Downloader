@@ -1,12 +1,12 @@
 package org.ivan.downloader.protocols;
 
-import org.ivan.downloader.interaction.IOAdapter;
+import org.ivan.downloader.connection.IOAdapter;
 
 import java.io.IOException;
 
 /**
  * Encapsulates concrete protocol download interaction.
- * May keep state and so should be used with single {@link org.ivan.downloader.interaction.IOAdapter}.
+ * May keep state and so should be used with single {@link org.ivan.downloader.connection.IOAdapter}.
  * Checks if range is supported by peer, send download request to peer, parse download bytes.
  * <p>
  * Created by ivan on 10.07.2014.
@@ -15,6 +15,13 @@ public interface ProtocolHelper {
     byte[] getRequestMessage(int offset, int length);
     byte[] getRequestMessage(int offset);
     byte[] getRequestMessage();
+    /**
+     * Sends download from specified offset request to server
+     * @param adapter underlying IO
+     * @param offset position to continue download
+     * @throws IOException
+     */
+    void requestDownload(IOAdapter adapter, int offset) throws IOException;
     /**
      * Read and parse download bytes from the remote peer
      * @param buffer a buffer to store download bytes

@@ -1,6 +1,6 @@
 package org.ivan.downloader.protocols;
 
-import org.ivan.downloader.interaction.IOAdapter;
+import org.ivan.downloader.connection.IOAdapter;
 
 import java.io.IOException;
 import java.net.URL;
@@ -40,9 +40,15 @@ public class HttpHelper implements ProtocolHelper {
         ).getBytes();
     }
 
+    @Override
+    public void requestDownload(IOAdapter adapter, int offset) throws IOException {
+        byte[] request = getRequestMessage(offset);
+        adapter.write(request);
+    }
+
     private int totalRead = 0;
     private boolean headerRead = false;
-    private int contentLength = 0;
+    private int contentLength = -1;
     private boolean chunked = false;
     private boolean supportsRange = false;
     @Override
@@ -75,6 +81,7 @@ public class HttpHelper implements ProtocolHelper {
     }
 
     private int readLength(byte[] buffer, IOAdapter ioAdapter) throws IOException {
+        if(contentLength == -1) throw new IllegalStateException("Content length not determined");
         if(totalRead >= contentLength) return -1;
         int nRead;
         // TODO really should be while

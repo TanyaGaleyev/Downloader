@@ -8,6 +8,8 @@ import java.io.IOException;
  * <p>
  * General usage strategy is {@code init -> appendBytes* -> flush}.
  * <p>
+ * Or {@code init -> readBytes* -> flush}
+ * <p>
  * Created by ivan on 10.07.2014.
  */
 public interface DownloadHolder {
@@ -26,6 +28,13 @@ public interface DownloadHolder {
      * @throws IOException
      */
     int appendBytes(byte[] buffer, int offset, int length) throws IOException;
+    /**
+     * Reads bytes from holder
+     * @param buffer buffer to store read bytes
+     * @return number of bytes actually read or -1 if end of stream reached
+     * @throws IOException
+     */
+    int readBytes(byte[] buffer) throws IOException;
     /**
      * Write remain in internal buffers bytes to storage and
      * release external resources associated with this holder if any

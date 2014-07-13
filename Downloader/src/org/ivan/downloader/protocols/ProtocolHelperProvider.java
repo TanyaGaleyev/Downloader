@@ -3,16 +3,8 @@ package org.ivan.downloader.protocols;
 import java.net.URL;
 
 /**
- * Creates helpers for different protocols.
- * @see ProtocolHelper
- * <p>
- * Created by ivan on 10.07.2014.
+ * Created by ivan on 13.07.2014.
  */
-public class ProtocolHelperProvider {
-    public static ProtocolHelper getHelper(URL url) {
-        if(url.getProtocol().trim().equalsIgnoreCase("http"))
-            return new HttpHelper(url);
-        else
-            throw new IllegalArgumentException("Unknown protocol " + url.getProtocol());
-    }
+public interface ProtocolHelperProvider {
+    ProtocolHelper getHelper(URL url);
 }
