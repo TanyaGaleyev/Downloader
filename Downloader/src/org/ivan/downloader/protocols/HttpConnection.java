@@ -1,6 +1,6 @@
 package org.ivan.downloader.protocols;
 
-import org.ivan.downloader.connection.IOAdapter;
+import org.ivan.downloader.io.IOAdapter;
 
 import java.io.IOException;
 import java.net.URL;
@@ -8,42 +8,52 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Helps with http protocol interaction
+ * Helps with http protocol interaction. Written from scratch.
+ * Used as sample {@link org.ivan.downloader.protocols.ProtocolConnection} implementation
  * <p>
  * Created by ivan on 10.07.2014.
  */
-public class HttpHelper implements ProtocolHelper {
+public class HttpConnection implements ProtocolConnection {
     private final URL url;
+    private final IOAdapter ioAdapter;
 
-    public HttpHelper(URL url) {
+    public HttpConnection(URL url, IOAdapter ioAdapter) {
         this.url = url;
+        this.ioAdapter = ioAdapter;
     }
 
     @Override
-    public byte[] getRequestMessage(int offset, int length) {
+    public void connect() throws IOException {
+        ioAdapter.open();
+    }
+
+    @Override
+    public void disconnect() throws IOException {
+        ioAdapter.close();
+    }
+
+    private byte[] getRequestMessage(int offset, int length) {
         return (baseGetHeader(url) +
                 String.format("Range: bytes=%d-%d\r\n\r\n", offset, offset + length - 1))
                 .getBytes();
     }
 
-    @Override
-    public byte[] getRequestMessage(int offset) {
+    private byte[] getRequestMessage(int offset) {
         return (baseGetHeader(url) +
                 String.format("Range: bytes=%d-\r\n\r\n", offset))
                 .getBytes();
     }
 
-    @Override
-    public byte[] getRequestMessage() {
+    private byte[] getRequestMessage() {
         return (baseGetHeader(url) + "\r\n"
 //                + "Range: bytes=0-\r\n\r\n"
         ).getBytes();
     }
 
     @Override
-    public void requestDownload(IOAdapter adapter, int offset) throws IOException {
+    public void requestDownload(int offset) throws IOException {
         byte[] request = getRequestMessage(offset);
-        adapter.write(request);
+        ioAdapter.write(request);
     }
 
     private int totalRead = 0;
@@ -51,9 +61,10 @@ public class HttpHelper implements ProtocolHelper {
     private int contentLength = -1;
     private boolean chunked = false;
     private boolean supportsRange = false;
+
     @Override
-    public int readDownloadBytes(byte[] buffer, IOAdapter ioAdapter) throws IOException {
-        readHeader(ioAdapter);
+    public int readDownloadBytes(byte[] buffer) throws IOException {
+        parseHeaders();
         if(chunked) {
             return readChunked(buffer, ioAdapter);
         } else {
@@ -61,10 +72,10 @@ public class HttpHelper implements ProtocolHelper {
         }
     }
 
-    private void readHeader(IOAdapter ioAdapter) throws IOException {
+    private void parseHeaders() throws IOException {
         if(!headerRead) {
             headerRead = true;
-            for (String header : readHeaders(ioAdapter)) {
+            for (String header : readHeaders()) {
                 if (header.startsWith("Content-Length:")) {
                     contentLength = Integer.parseInt(header.substring("Content-Length:".length()).trim());
                 } else if(header.startsWith("Transfer-Encoding:") && header.contains("chunked")) {
@@ -104,14 +115,13 @@ public class HttpHelper implements ProtocolHelper {
         return nRead;
     }
 
-    @Override
-    public byte[] checkRangeDownloadMessage() {
+    private byte[] checkRangeDownloadMessage() {
         return headHeader(url).getBytes();
     }
 
     @Override
-    public boolean isRangeSupported(IOAdapter ioAdapter) throws IOException {
-        readHeader(ioAdapter);
+    public boolean isRangeSupported() throws IOException {
+        parseHeaders();
         readPosition = internalBuffer.length;
         return supportsRange;
     }
@@ -126,7 +136,7 @@ public class HttpHelper implements ProtocolHelper {
     int readPosition = internalBuffer.length;
     int internalLenght = 0;
 
-    private List<String> readHeaders(IOAdapter ioAdapter) throws IOException {
+    private List<String> readHeaders() throws IOException {
         // todo it seems there is nothing about wrong format headers situation
         List<String> ret = new ArrayList<>();
         byte[] aux = new byte[1];

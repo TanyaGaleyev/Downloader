@@ -4,6 +4,8 @@ import java.net.URL;
 import java.util.Date;
 
 /**
+ * Unique descriptor for each download session
+ * <p>
  * Created by ivan on 10.07.2014.
  */
 public class DownloadDescriptor {

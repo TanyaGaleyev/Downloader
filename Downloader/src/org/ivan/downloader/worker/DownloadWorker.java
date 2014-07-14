@@ -1,7 +1,6 @@
 package org.ivan.downloader.worker;
 
-import org.ivan.downloader.connection.IOAdapter;
-import org.ivan.downloader.protocols.ProtocolHelper;
+import org.ivan.downloader.protocols.ProtocolConnection;
 import org.ivan.downloader.storage.DownloadHolder;
 
 import java.io.IOException;
@@ -24,33 +23,32 @@ import java.util.logging.Logger;
 public class DownloadWorker {
 
     public static final int DEFAULT_BUFF_SIZE = 2048;
-    private final IOAdapter ioAdapter;
-    private final ProtocolHelper helper;
+    private final ProtocolConnection connection;
     private final DownloadHolder downloadHolder;
     private volatile int bytesRead;
     private volatile boolean isRangeSupported;
     private volatile int size;
 
-    public DownloadWorker(IOAdapter ioAdapter, ProtocolHelper helper, DownloadHolder downloadHolder) {
-        this(ioAdapter, helper, downloadHolder, 0, 0);
+    public DownloadWorker(ProtocolConnection connection, DownloadHolder downloadHolder) {
+        this(connection, downloadHolder, 0, 0);
     }
 
-    public DownloadWorker(IOAdapter ioAdapter, ProtocolHelper helper, DownloadHolder downloadHolder, int bytesRead, int size) {
-        this.ioAdapter = ioAdapter;
-        this.helper = helper;
+    public DownloadWorker(ProtocolConnection connection, DownloadHolder downloadHolder, int bytesRead, int size) {
+        this.connection = connection;
         this.downloadHolder = downloadHolder;
         this.bytesRead = bytesRead;
         this.size = size;
     }
 
     public void performDownload() throws IOException {
-        ioAdapter.open();
-        helper.requestDownload(ioAdapter, bytesRead);
-        isRangeSupported = helper.isRangeSupported(ioAdapter);
-        if(size <= 0) size = helper.getSize();
+        connection.connect();
+        connection.requestDownload(bytesRead);
+        isRangeSupported = connection.isRangeSupported();
+        if(size <= 0) size = connection.getSize();
+        downloadHolder.init(bytesRead);
         byte[] buffer = new byte[DEFAULT_BUFF_SIZE];
         int nRead;
-        while ((nRead = helper.readDownloadBytes(buffer, ioAdapter)) != -1) {
+        while ((nRead = connection.readDownloadBytes(buffer)) != -1) {
             downloadHolder.appendBytes(buffer, 0, nRead);
             bytesRead += nRead;
         }
@@ -58,7 +56,7 @@ public class DownloadWorker {
 
     public void cancel() {
         try {
-            ioAdapter.close();
+            connection.disconnect();
             downloadHolder.flush();
         } catch (IOException e) {
             Logger.getGlobal().log(Level.WARNING, e.getMessage(), e);

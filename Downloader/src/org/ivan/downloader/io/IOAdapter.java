@@ -1,10 +1,10 @@
-package org.ivan.downloader.connection;
+package org.ivan.downloader.io;
 
 import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * We use this interface implementations to standard IO operations in different IO implementations
+ * We use this interface implementations to unify IO operations in different IO implementations
  * (IO streams, NIO channels, some native IO, etc.)
  * <p>
  * Created by ivan on 10.07.2014.

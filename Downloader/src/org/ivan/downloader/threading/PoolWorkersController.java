@@ -1,6 +1,6 @@
 package org.ivan.downloader.threading;
 
-import org.ivan.downloader.DownloadObserver;
+import org.ivan.downloader.DownloadWorkerObserver;
 import org.ivan.downloader.threading.messages.*;
 import org.ivan.downloader.worker.DownloadWorker;
 
@@ -13,13 +13,27 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * {@link org.ivan.downloader.threading.WorkersController} implementation that uses
+ * cached thread pool and a message queue. Each {@link org.ivan.downloader.worker.DownloadWorker}
+ * executes in separate thread. Message queue is used to control workers lifecycle.
+ * Message queue thread is interruptible. After it finishes it requests shutdown for all workers.
+ * <p>
+ * Each worker thread works fully independently. It is designed to execute each download session entirely.
+ * In other words worker thread does not wait for some events from outside.
+ * It fully manages external resources (files, sockets) associated with it.
+ * It only could be interrupted to pause download.
+ * <p>
+ * External components interact with worker thread through {@link org.ivan.downloader.DownloadWorkerObserver} notifications.
+ * Such notifications are spawned when worker lifecycle event occurs.
+ * This events is download completion, error occurrence, external download cancel.
+ * <p>
  * Created by ivan on 10.07.2014.
  */
 public class PoolWorkersController implements WorkersController {
     private ExecutorService pool = Executors.newCachedThreadPool();
     private Map<Integer, WorkerPair> workerMap = new HashMap<>();
     private BlockingQueue<MessageUnit> messageQueue = new LinkedBlockingQueue<>();
-    private DownloadObserver downloadObserver;
+    private DownloadWorkerObserver downloadWorkerObserver;
     private static class MessageUnit {
         Message msg;
         Callback cb;
@@ -32,8 +46,8 @@ public class PoolWorkersController implements WorkersController {
 
     public PoolWorkersController() {}
 
-    public void startController(DownloadObserver observer) {
-        downloadObserver = observer;
+    public void startController(DownloadWorkerObserver observer) {
+        downloadWorkerObserver = observer;
         pool.submit(new Runnable() {
             @Override
             public void run() {
@@ -42,8 +56,9 @@ public class PoolWorkersController implements WorkersController {
                         processMessage();
                     }
                 } catch (InterruptedException e) {
-                    Logger.getGlobal().log(Level.INFO, "Message pool interrupted", e);
+                    Logger.getGlobal().log(Level.INFO, "Message queue thread was interrupted", e);
                 }
+                shutdownController();
             }
         });
     }
@@ -77,15 +92,15 @@ public class PoolWorkersController implements WorkersController {
             public void run() {
                 try {
                     worker.performDownload();
-                    downloadObserver.onWorkerComplete(uid, worker);
+                    downloadWorkerObserver.onWorkerComplete(uid, worker);
                 } catch (ClosedByInterruptException e) {
-                    downloadObserver.onWorkerStopped(uid, worker);
+                    downloadWorkerObserver.onWorkerStopped(uid, worker);
                     Logger.getGlobal().log(Level.INFO, "worker canceled", e);
                 } catch (IOException e) {
-                    downloadObserver.onWorkerError(uid, worker, formatMessage(e));
+                    downloadWorkerObserver.onWorkerError(uid, worker, formatMessage(e));
                     Logger.getGlobal().log(Level.INFO, e.getClass().getName(), e);
                 } catch (Exception e) {
-                    downloadObserver.onWorkerError(uid, worker, formatMessage(e));
+                    downloadWorkerObserver.onWorkerError(uid, worker, formatMessage(e));
                     Logger.getGlobal().log(Level.SEVERE, e.getClass().getName(), e);
                 } finally {
                     // need to avoid message loop put interruption exception

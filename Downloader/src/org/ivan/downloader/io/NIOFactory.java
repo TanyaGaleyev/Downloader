@@ -1,9 +1,8 @@
-package org.ivan.downloader.connection;
+package org.ivan.downloader.io;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URL;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
@@ -12,9 +11,9 @@ import java.nio.channels.SocketChannel;
  * <p>
  * Created by ivan on 10.07.2014.
  */
-public class NIOComponent implements IOComponent {
+public class NIOFactory implements IOFactory {
     @Override
-    public IOAdapter createAdapter(final URL url) throws IOException {
+    public IOAdapter createAdapter(final URL url) {
         return new IOAdapter() {
             SocketChannel socketChannel;
             // TODO buffers sizes should fit each other

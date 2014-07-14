@@ -1,4 +1,4 @@
-package org.ivan.downloader.connection;
+package org.ivan.downloader.io;
 
 import java.io.IOException;
 import java.net.URL;
@@ -11,12 +11,11 @@ import java.net.URL;
  * <p>
  * Created by ivan on 10.07.2014.
  */
-public interface IOComponent {
+public interface IOFactory {
     /**
      * Creates IO adapter for given url. For example it could be TCP socket for single client-server session.
      * @param url address to connect
      * @return IO adapter for requested url
-     * @throws IOException
      */
-    IOAdapter createAdapter(URL url) throws IOException;
+    IOAdapter createAdapter(URL url);
 }

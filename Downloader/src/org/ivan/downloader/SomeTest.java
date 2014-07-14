@@ -1,9 +1,9 @@
 package org.ivan.downloader;
 
-import org.ivan.downloader.components.GenericComponentsFactory;
-import org.ivan.downloader.components.UrlConnectionComponentsFactory;
-import org.ivan.downloader.connection.NIOComponent;
-import org.ivan.downloader.protocols.SimpleProtocolHelperProvider;
+import org.ivan.downloader.connection.GenericConnectionFactory;
+import org.ivan.downloader.connection.UrlConnectionFactory;
+import org.ivan.downloader.io.NIOFactory;
+import org.ivan.downloader.protocols.SimpleProtocolConnectionProvider;
 import org.ivan.downloader.threading.PoolWorkersController;
 
 import java.io.BufferedReader;
@@ -16,14 +16,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * CLI to test Download Manager. Usage will be printed to System.out stream.
+ * <p>
  * Created by ivan on 10.07.2014.
  */
 public class SomeTest {
     public static void main(String[] args) throws Exception {
         Logger.getGlobal().setLevel(Level.WARNING);
-        DownloadManager dc = new DownloadController(new UrlConnectionComponentsFactory(), new PoolWorkersController());
+        DownloadManager dc = new DownloadController(new UrlConnectionFactory(), new PoolWorkersController());
 //        DownloadController dc = new DownloadController(
-//                new GenericComponentsFactory(new NIOComponent(), new SimpleProtocolHelperProvider()),
+//                new GenericConnectionFactory(new NIOFactory(), new SimpleProtocolConnectionProvider()),
 //                new PoolWorkersController());
         printUsage();
         try {
@@ -37,14 +39,16 @@ public class SomeTest {
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             String str;
             while (!(str = br.readLine().trim().toLowerCase()).equals("q")) {
-                if (str.equals("l")) {
+                if (str.matches("l(\\s+-v)?")) {
+                    boolean verbose = str.contains("-v");
                     Collection<DownloadDescriptor> descriptors = dc.getDescriptors().values();
                     if(descriptors.isEmpty()) {
                         System.out.println("Empty downloads list");
                     } else {
                         for (DownloadDescriptor dd : descriptors) {
                             final int uid = dd.getUid();
-                            System.out.println(uid + ": " + dc.requestState(dd) + ", time: " + dd.getDownloadTime());
+                            String url = verbose ? "(" + dd.getUrl() + ")" : "";
+                            System.out.println(uid + url + ": " + dc.requestState(dd) + ", time: " + dd.getDownloadTime());
                         }
                     }
                 } else if (str.startsWith("r ")) {
@@ -91,8 +95,9 @@ public class SomeTest {
     private static void printUsage() {
         System.out.println("Test console for Download Manager");
         System.out.println("Usage:");
-        System.out.println("l");
+        System.out.println("l [-v]");
         System.out.println("    prints list of submitted downloads");
+        System.out.println("    with -v option provides verbose output");
         System.out.println("OR");
         System.out.println("d <url>");
         System.out.println("    start download from specified url");

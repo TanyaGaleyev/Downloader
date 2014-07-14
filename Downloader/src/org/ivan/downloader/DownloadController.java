@@ -1,17 +1,15 @@
 package org.ivan.downloader;
 
-import org.ivan.downloader.components.Components;
-import org.ivan.downloader.components.ComponentsFactory;
+import org.ivan.downloader.connection.ConnectionFactory;
+import org.ivan.downloader.protocols.ProtocolConnection;
 import org.ivan.downloader.storage.DownloadHolder;
 import org.ivan.downloader.storage.FileHolder;
-import org.ivan.downloader.threading.PoolWorkersController;
 import org.ivan.downloader.threading.WorkersController;
 import org.ivan.downloader.threading.messages.CancelWorkerMessage;
 import org.ivan.downloader.threading.messages.SubmitWorkerMessage;
 import org.ivan.downloader.worker.DownloadWorker;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
@@ -22,23 +20,23 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by ivan on 10.07.2014.
  */
-public class DownloadController implements DownloadManager, DownloadObserver {
+public class DownloadController implements DownloadManager, DownloadWorkerObserver {
     public static final String DOWNLOADS_DIR = "downloads";
     private WorkersController workersController;
     private Map<Integer, DownloadDescriptor> descriptors = new ConcurrentHashMap<>();
-    private ComponentsFactory componentsFactory;
+    private ConnectionFactory connectionFactory;
     private int counter = 0;
     private Map<Integer, DownloadTuple> downloadTupleMap = new ConcurrentHashMap<>();
 
-    public DownloadController(ComponentsFactory componentsFactory, WorkersController workersController) {
-        this.componentsFactory = componentsFactory;
+    public DownloadController(ConnectionFactory connectionFactory, WorkersController workersController) {
+        this.connectionFactory = connectionFactory;
         this.workersController = workersController;
         new File(DOWNLOADS_DIR).mkdirs();
         workersController.startController(this);
     }
 
     @Override
-    public List<DownloadDescriptor> startDownload(DownloadRequest request) throws IOException {
+    public List<DownloadDescriptor> startDownload(DownloadRequest request) {
         List<DownloadDescriptor> descrs = new ArrayList<>();
         for(URL url : request.getUrls())
             descrs.add(startDownload(url));
@@ -46,7 +44,7 @@ public class DownloadController implements DownloadManager, DownloadObserver {
     }
 
     @Override
-    public DownloadDescriptor startDownload(URL url) throws IOException {
+    public DownloadDescriptor startDownload(URL url) {
         DownloadDescriptor d = new DownloadDescriptor(url, counter++);
         descriptors.put(d.getUid(), d);
         DownloadTuple dl = new DownloadTuple();
@@ -59,27 +57,32 @@ public class DownloadController implements DownloadManager, DownloadObserver {
         return d;
     }
 
-    private void startDownload(DownloadDescriptor d, DownloadTuple dl) throws IOException {
+    private void startDownload(DownloadDescriptor d, DownloadTuple dl) {
         URL url = d.getUrl();
         if(dl.holder == null)
             dl.holder = constructHolder(d);
-        dl.holder.init(dl.state.getBytesRead());
-        Components components = componentsFactory.createComponents(url);
-        DownloadWorker worker = new DownloadWorker(
-                components.getIOAdapter(), components.getHelper(), dl.holder, dl.state.getBytesRead(), dl.state.getSize());
+        ProtocolConnection connection = connectionFactory.createConnection(url);
+        DownloadWorker worker = new DownloadWorker(connection, dl.holder, dl.state.getBytesRead(), dl.state.getSize());
         dl.worker = worker;
         dl.state.setStatus(DownloadState.StateCode.IN_PROGRESS);
         workersController.sendMessage(new SubmitWorkerMessage(d.getUid(), worker));
     }
 
     private DownloadHolder constructHolder(DownloadDescriptor d) {
-        String[] pathParts = d.getUrl().getPath().split("/");
-        String filename = pathParts[pathParts.length - 1];
-        filename = filename.split("\\?")[0];
-        if(filename.trim().isEmpty()) filename = "" + d.getUid();
-        File file = new File(DOWNLOADS_DIR + File.separator + filename);
+        File file = new File(DOWNLOADS_DIR + File.separator + getFileName(d));
         file.delete();
         return new FileHolder(file);
+    }
+
+    private String getFileName(DownloadDescriptor d) {
+        String[] pathParts = d.getUrl().getPath().split("/");
+        String filename = "";
+        if(pathParts.length > 0) {
+            filename = pathParts[pathParts.length - 1];
+            filename = filename.split("\\?")[0];
+        }
+        if (filename.trim().isEmpty()) filename = "" + d.getUid();
+        return filename;
     }
 
     @Override
@@ -94,7 +97,7 @@ public class DownloadController implements DownloadManager, DownloadObserver {
     }
 
     @Override
-    public void resumeDownload(DownloadDescriptor d) throws IOException {
+    public void resumeDownload(DownloadDescriptor d) {
         DownloadTuple dl = downloadTupleMap.get(d.getUid());
         synchronized (dl) {
             if (dl.state.getStateCode() != DownloadState.StateCode.COMPLETE &&
