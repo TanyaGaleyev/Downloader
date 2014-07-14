@@ -41,7 +41,7 @@ public class FileHolder implements DownloadHolder {
     private InputStream inputStream = null;
     @Override
     public int readBytes(byte[] buffer) throws IOException {
-        // TODO replace with read direct from channel, wrap with InputStream for simplicity
+        // replace with read direct from channel, wrap with InputStream for simplicity
         if(inputStream == null) inputStream = Channels.newInputStream(channel);
         return inputStream.read(buffer);
     }

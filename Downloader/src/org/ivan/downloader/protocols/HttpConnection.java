@@ -95,7 +95,7 @@ public class HttpConnection implements ProtocolConnection {
         if(contentLength == -1) throw new IllegalStateException("Content length not determined");
         if(totalRead >= contentLength) return -1;
         int nRead;
-        // TODO really should be while
+        // really should be while
 //        if(readPosition < internalLenght - 1) {
 //            int remainBytes = internalLenght - readPosition - 1;
 //            System.arraycopy(internalBuffer, readPosition + 1, buffer, 0, remainBytes);
@@ -137,7 +137,7 @@ public class HttpConnection implements ProtocolConnection {
     int internalLenght = 0;
 
     private List<String> readHeaders() throws IOException {
-        // todo it seems there is nothing about wrong format headers situation
+        // it seems there is nothing about wrong format headers situation
         List<String> ret = new ArrayList<>();
         byte[] aux = new byte[1];
         int nRead;

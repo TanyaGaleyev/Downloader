@@ -16,7 +16,6 @@ public class NIOFactory implements IOFactory {
     public IOAdapter createAdapter(final URL url) {
         return new IOAdapter() {
             SocketChannel socketChannel;
-            // TODO buffers sizes should fit each other
             ByteBuffer byteBuffer = ByteBuffer.allocate(2048);
 
             @Override
